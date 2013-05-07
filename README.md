@@ -1,17 +1,16 @@
 libart [![Build Status](https://travis-ci.org/armon/libart.png)](https://travis-ci.org/armon/libart)
 =========
 
-This library probides an ANCI C implementation of the Adaptive Radix
-Tree or ART. The ART operates similar to a traditional Radix tree but
+This library provides an ANSI C implementation of the Adaptive Radix
+Tree or ART. The ART operates similar to a traditional radix tree but
 avoids the wasted space of internal nodes by changing the node size.
 It makes use of 4 node sizes (4, 16, 48, 256), and can guarentee that
 the overhead is no more than 52 bytes per key, though in practice it is
 much lower.
 
-As a Radix tree, it provides the following:
- * O(k) operations. In many cases, this can be faster than hash table since
-   the hash is actually an O(k) operation, and hash table has very poor cache locality.
- * Ordered iteration
+As a radix tree, it provides the following:
+ * O(k) operations. In many cases, this can be faster than a hash table since
+   the hash function is an O(k) operation, and hash tables have very poor cache locality.
  * Minimum / Maximum value lookups
  * Prefix compression
 
