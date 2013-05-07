@@ -13,12 +13,13 @@ As a Radix tree, it provides the following:
    the hash is actually an O(k) operation, and hash table has very poor cache locality.
  * Ordered iteration
  * Minimum / Maximum value lookups
+ * Prefix compression
 
 
 Usage
 -------
 
-Building the test code may generate errors if libcheck is not available.
+Building the test code will generate errors if libcheck is not available.
 To build the test code successfully, do the following::
 
     $ cd deps/check-0.9.8/
