@@ -1,0 +1,10 @@
+language: c
+before_install:
+  - pushd deps/check-0.9.8
+  - ./configure
+  - make
+  - sudo make install
+  - sudo ldconfig
+  - popd
+  - scons
+script: ./test_runner
