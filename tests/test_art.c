@@ -27,10 +27,10 @@ START_TEST(test_art_insert)
     FILE *f = fopen("tests/words.txt", "r");
 
     int line = 1;
-    while (fgets((char*)&buf, 512, f)) {
-        len = strlen((char*)&buf);
+    while (fgets(buf, sizeof buf, f)) {
+        len = strlen(buf);
         buf[len-1] = '\0';
-        fail_unless(NULL == art_insert(&t, (char*)&buf, len, (void*)(uintptr_t)line));
+        fail_unless(NULL == art_insert(&t, buf, len, (void*)(uintptr_t)line));
         fail_unless(art_size(&t) == line);
         line++;
     }
@@ -51,11 +51,11 @@ START_TEST(test_art_insert_search)
     FILE *f = fopen("tests/words.txt", "r");
 
     int line = 1;
-    while (fgets((char*)&buf, 512, f)) {
-        len = strlen((char*)&buf);
+    while (fgets(buf, sizeof buf, f)) {
+        len = strlen(buf);
         buf[len-1] = '\0';
         fail_unless(NULL ==
-            art_insert(&t, (char*)&buf, len, (void*)(uintptr_t)line));
+            art_insert(&t, buf, len, (void*)(uintptr_t)line));
         line++;
     }
 
@@ -64,13 +64,13 @@ START_TEST(test_art_insert_search)
 
     // Search for each line
     line = 1;
-    while (fgets((char*)&buf, 512, f)) {
-        len = strlen((char*)&buf);
+    while (fgets(buf, sizeof buf, f)) {
+        len = strlen(buf);
         buf[len-1] = '\0';
 
-        void *val = art_search(&t, (char*)&buf, len);
+        void *val = art_search(&t, buf, len);
         if (line != (uintptr_t)val) {
-            printf("Line: %d Val: %d Str: %s\n", line, (int)(uintptr_t)val, (char*)&buf);
+            printf("Line: %d Val: %d Str: %s\n", line, (int)(uintptr_t)val, buf);
         }
         fail_unless(line == (uintptr_t)val);
         line++;
@@ -100,11 +100,11 @@ START_TEST(test_art_insert_delete)
     FILE *f = fopen("tests/words.txt", "r");
 
     int line = 1;
-    while (fgets((char*)&buf, 512, f)) {
-        len = strlen((char*)&buf);
+    while (fgets(buf, sizeof buf, f)) {
+        len = strlen(buf);
         buf[len-1] = '\0';
         fail_unless(NULL ==
-            art_insert(&t, (char*)&buf, len, (void*)(uintptr_t)line));
+            art_insert(&t, buf, len, (void*)(uintptr_t)line));
         line++;
     }
 
@@ -113,22 +113,22 @@ START_TEST(test_art_insert_delete)
 
     // Search for each line
     line = 1;
-    while (fgets((char*)&buf, 512, f)) {
-        len = strlen((char*)&buf);
+    while (fgets(buf, sizeof buf, f)) {
+        len = strlen(buf);
         buf[len-1] = '\0';
 
         // Search first, ensure all entries still
         // visible
-        void *val = art_search(&t, (char*)&buf, len);
+        void *val = art_search(&t, buf, len);
         if (line != (uintptr_t)val) {
-            printf("Line: %d Val: %d Str: %s\n", line, (int)(uintptr_t)val, (char*)&buf);
+            printf("Line: %d Val: %d Str: %s\n", line, (int)(uintptr_t)val, buf);
         }
         fail_unless(line == (uintptr_t)val);
 
         // Delete, should get lineno back
-        val = art_delete(&t, (char*)&buf, len);
+        val = art_delete(&t, buf, len);
         if (line != (uintptr_t)val) {
-            printf("Line: %d Val: %d Str: %s\n", line, (int)(uintptr_t)val, (char*)&buf);
+            printf("Line: %d Val: %d Str: %s\n", line, (int)(uintptr_t)val, buf);
         }
         fail_unless(line == (uintptr_t)val);
 
