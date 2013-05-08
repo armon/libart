@@ -1,6 +1,9 @@
-#include <check.h>
-#include <stdio.h>
 #include <fcntl.h>
+#include <inttypes.h>
+#include <stdio.h>
+
+#include <check.h>
+
 #include "art.h"
 
 START_TEST(test_art_init_and_destroy)
@@ -26,11 +29,11 @@ START_TEST(test_art_insert)
     char buf[512];
     FILE *f = fopen("tests/words.txt", "r");
 
-    int line = 1;
+    uintptr_t line = 1;
     while (fgets(buf, sizeof buf, f)) {
         len = strlen(buf);
         buf[len-1] = '\0';
-        fail_unless(NULL == art_insert(&t, buf, len, (void*)(uintptr_t)line));
+        fail_unless(NULL == art_insert(&t, buf, len, (void*)line));
         fail_unless(art_size(&t) == line);
         line++;
     }
@@ -50,12 +53,12 @@ START_TEST(test_art_insert_search)
     char buf[512];
     FILE *f = fopen("tests/words.txt", "r");
 
-    int line = 1;
+    uintptr_t line = 1;
     while (fgets(buf, sizeof buf, f)) {
         len = strlen(buf);
         buf[len-1] = '\0';
         fail_unless(NULL ==
-            art_insert(&t, buf, len, (void*)(uintptr_t)line));
+            art_insert(&t, buf, len, (void*)line));
         line++;
     }
 
@@ -68,11 +71,9 @@ START_TEST(test_art_insert_search)
         len = strlen(buf);
         buf[len-1] = '\0';
 
-        void *val = art_search(&t, buf, len);
-        if (line != (uintptr_t)val) {
-            printf("Line: %d Val: %d Str: %s\n", line, (int)(uintptr_t)val, buf);
-        }
-        fail_unless(line == (uintptr_t)val);
+        uintptr_t val = (uintptr_t)art_search(&t, buf, len);
+	fail_unless(line == val, "Line: %d Val: %" PRIuPTR " Str: %s\n", line,
+	    val, buf);
         line++;
     }
 
@@ -99,14 +100,16 @@ START_TEST(test_art_insert_delete)
     char buf[512];
     FILE *f = fopen("tests/words.txt", "r");
 
-    int line = 1;
+    uintptr_t line = 1, nlines;
     while (fgets(buf, sizeof buf, f)) {
         len = strlen(buf);
         buf[len-1] = '\0';
         fail_unless(NULL ==
-            art_insert(&t, buf, len, (void*)(uintptr_t)line));
+            art_insert(&t, buf, len, (void*)line));
         line++;
     }
+
+    nlines = line - 1;
 
     // Seek back to the start
     fseek(f, 0, SEEK_SET);
@@ -119,21 +122,17 @@ START_TEST(test_art_insert_delete)
 
         // Search first, ensure all entries still
         // visible
-        void *val = art_search(&t, buf, len);
-        if (line != (uintptr_t)val) {
-            printf("Line: %d Val: %d Str: %s\n", line, (int)(uintptr_t)val, buf);
-        }
-        fail_unless(line == (uintptr_t)val);
+        uintptr_t val = (uintptr_t)art_search(&t, buf, len);
+	fail_unless(line == val, "Line: %d Val: %" PRIuPTR " Str: %s\n", line,
+	    val, buf);
 
         // Delete, should get lineno back
-        val = art_delete(&t, buf, len);
-        if (line != (uintptr_t)val) {
-            printf("Line: %d Val: %d Str: %s\n", line, (int)(uintptr_t)val, buf);
-        }
-        fail_unless(line == (uintptr_t)val);
+        val = (uintptr_t)art_delete(&t, buf, len);
+	fail_unless(line == val, "Line: %d Val: %" PRIuPTR " Str: %s\n", line,
+	    val, buf);
 
         // Check the size
-        fail_unless(art_size(&t) == 235886 - line);
+        fail_unless(art_size(&t) == nlines - line);
         line++;
     }
 
