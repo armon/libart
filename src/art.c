@@ -754,7 +754,7 @@ int recursive_iter(art_node *n, art_callback cb, void *data) {
     if (!n) return 0;
     if (IS_LEAF(n)) {
         art_leaf *l = LEAF_RAW(n);
-        return cb(data, l->key, l->key_len, l->value);
+        return cb(data, (const char*)l->key, l->key_len, l->value);
     }
 
     int idx, res;
