@@ -9,6 +9,8 @@
 
 #define MAX_PREFIX_LEN 10
 
+typedef int(*art_callback)(void *data, const char *key, uint32_t key_len, void *value);
+
 /**
  * This struct is included as part
  * of all the various node sizes
@@ -135,5 +137,17 @@ art_leaf* art_minimum(art_tree *t);
  * @return The maximum leaf or NULL
  */
 art_leaf* art_maximum(art_tree *t);
+
+/**
+ * Iterates through the entries pairs in the map,
+ * invoking a callback for each. The call back gets a
+ * key, value for each and returns an integer stop value.
+ * If the callback returns non-zero, then the iteration stops.
+ * @arg t The tree to iterate over
+ * @arg cb The callback function to invoke
+ * @arg data Opaque handle passed to the callback
+ * @return 0 on success, or the return of the callback.
+ */
+int art_iter(art_tree *t, art_callback cb, void *data);
 
 #endif

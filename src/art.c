@@ -748,3 +748,66 @@ void* art_delete(art_tree *t, char *key, int key_len) {
     return NULL;
 }
 
+// Recursively iterates over the tree
+int recursive_iter(art_node *n, art_callback cb, void *data) {
+    // Handle base cases
+    if (!n) return 0;
+    if (IS_LEAF(n)) {
+        art_leaf *l = LEAF_RAW(n);
+        return cb(data, l->key, l->key_len, l->value);
+    }
+
+    int idx, res;
+    switch (n->type) {
+        case NODE4:
+            for (int i=0; i < n->num_children; i++) {
+                res = recursive_iter(((art_node4*)n)->children[i], cb, data);
+                if (res) return res;
+            }
+            break;
+
+        case NODE16:
+            for (int i=0; i < n->num_children; i++) {
+                res = recursive_iter(((art_node16*)n)->children[i], cb, data);
+                if (res) return res;
+            }
+            break;
+
+        case NODE48:
+            for (int i=0; i < 256; i++) {
+                idx = ((art_node48*)n)->keys[i];
+                if (!idx) continue;
+
+                res = recursive_iter(((art_node48*)n)->children[idx-1], cb, data);
+                if (res) return res;
+            }
+            break;
+
+        case NODE256:
+            for (int i=0; i < 256; i++) {
+                if (!((art_node256*)n)->children[i]) continue;
+                res = recursive_iter(((art_node256*)n)->children[i], cb, data);
+                if (res) return res;
+            }
+            break;
+
+        default:
+            abort();
+    }
+    return 0;
+}
+
+/**
+ * Iterates through the entries pairs in the map,
+ * invoking a callback for each. The call back gets a
+ * key, value for each and returns an integer stop value.
+ * If the callback returns non-zero, then the iteration stops.
+ * @arg t The tree to iterate over
+ * @arg cb The callback function to invoke
+ * @arg data Opaque handle passed to the callback
+ * @return 0 on success, or the return of the callback.
+ */
+int art_iter(art_tree *t, art_callback cb, void *data) {
+    return recursive_iter(t->root, cb, data);
+}
+
