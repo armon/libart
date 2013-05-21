@@ -749,7 +749,7 @@ void* art_delete(art_tree *t, char *key, int key_len) {
 }
 
 // Recursively iterates over the tree
-int recursive_iter(art_node *n, art_callback cb, void *data) {
+static int recursive_iter(art_node *n, art_callback cb, void *data) {
     // Handle base cases
     if (!n) return 0;
     if (IS_LEAF(n)) {
@@ -809,5 +809,78 @@ int recursive_iter(art_node *n, art_callback cb, void *data) {
  */
 int art_iter(art_tree *t, art_callback cb, void *data) {
     return recursive_iter(t->root, cb, data);
+}
+
+/**
+ * Checks if a leaf prefix matches
+ * @return 0 on success.
+ */
+static int leaf_prefix_matches(art_leaf *n, char *prefix, int prefix_len) {
+    // Fail if the key length is too short
+    if (n->key_len < prefix_len) return 1;
+
+    // Compare the keys
+    return memcmp(n->key, prefix, prefix_len);
+}
+
+/**
+ * Iterates through the entries pairs in the map,
+ * invoking a callback for each that matches a given prefix.
+ * The call back gets a key, value for each and returns an integer stop value.
+ * If the callback returns non-zero, then the iteration stops.
+ * @arg t The tree to iterate over
+ * @arg prefix The prefix of keys to read
+ * @arg prefix_len The length of the prefix
+ * @arg cb The callback function to invoke
+ * @arg data Opaque handle passed to the callback
+ * @return 0 on success, or the return of the callback.
+ */
+int art_iter_prefix(art_tree *t, char *key, int key_len, art_callback cb, void *data) {
+    art_node **child;
+    art_node *n = t->root;
+    int prefix_len, depth = 0;
+    while (n) {
+        // Might be a leaf
+        if (IS_LEAF(n)) {
+            n = LEAF_RAW(n);
+            // Check if the expanded path matches
+            if (!leaf_prefix_matches((art_leaf*)n, key, key_len)) {
+                art_leaf *l = (art_leaf*)n;
+                return cb(data, (const char*)l->key, l->key_len, l->value);
+            }
+            return 0;
+        }
+
+        // If the depth matches the prefix, we need to handle this node
+        if (depth == key_len) {
+            art_leaf *l = minimum(n);
+            if (!leaf_prefix_matches(l, key, key_len))
+               return recursive_iter(n, cb, data);
+            return 0;
+        }
+
+        // Bail if the prefix does not match
+        if (n->partial_len) {
+            prefix_len = check_prefix(n, key, key_len, depth);
+
+            // If there is no match, search is terminated
+            if (!prefix_len)
+                return 0;
+
+            // If we've matched the prefix, iterate on this node
+            else if (depth + prefix_len == key_len) {
+                return recursive_iter(n, cb, data);
+            }
+
+            // if there is a full match, go deeper
+            depth = depth + n->partial_len;
+        }
+
+        // Recursively search
+        child = find_child(n, key[depth]);
+        n = (child) ? *child : NULL;
+        depth++;
+    }
+    return 0;
 }
 
