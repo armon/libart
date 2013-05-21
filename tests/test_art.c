@@ -188,3 +188,85 @@ START_TEST(test_art_insert_iter)
 }
 END_TEST
 
+typedef struct {
+    int count;
+    int max_count;
+    char **expected;
+} prefix_data;
+
+static int test_prefix_cb(void *data, const char *k, uint32_t k_len, void *val) {
+    prefix_data *p = data;
+    fail_unless(p->count < p->max_count);
+    fail_unless(memcmp(k, p->expected[p->count], k_len) == 0);
+    p->count++;
+    return 0;
+}
+
+START_TEST(test_art_iter_prefix)
+{
+    art_tree t;
+    int res = init_art_tree(&t);
+    fail_unless(res == 0);
+
+    char *s = "api.foo.bar";
+    fail_unless(NULL == art_insert(&t, s, strlen(s)+1, NULL));
+
+    s = "api.foo.baz";
+    fail_unless(NULL == art_insert(&t, s, strlen(s)+1, NULL));
+
+    s = "api.foe.fum";
+    fail_unless(NULL == art_insert(&t, s, strlen(s)+1, NULL));
+
+    s = "abc.123.456";
+    fail_unless(NULL == art_insert(&t, s, strlen(s)+1, NULL));
+
+    s = "api.foo";
+    fail_unless(NULL == art_insert(&t, s, strlen(s)+1, NULL));
+
+    s = "api";
+    fail_unless(NULL == art_insert(&t, s, strlen(s)+1, NULL));
+
+    // Iterate over api
+    char *expected[] = {"api", "api.foe.fum", "api.foo", "api.foo.bar", "api.foo.baz"};
+    prefix_data p = { 0, 5, expected };
+    fail_unless(!art_iter_prefix(&t, "api", 3, test_prefix_cb, &p));
+    fail_unless(p.count == p.max_count, "Count: %d Max: %d", p.count, p.max_count);
+
+    // Iterate over 'a'
+    char *expected2[] = {"abc.123.456", "api", "api.foe.fum", "api.foo", "api.foo.bar", "api.foo.baz"};
+    prefix_data p2 = { 0, 6, expected2 };
+    fail_unless(!art_iter_prefix(&t, "a", 1, test_prefix_cb, &p2));
+    fail_unless(p2.count == p2.max_count);
+
+    // Check a failed iteration
+    prefix_data p3 = { 0, 0, NULL };
+    fail_unless(!art_iter_prefix(&t, "b", 1, test_prefix_cb, &p3));
+    fail_unless(p3.count == 0);
+
+    // Iterate over api.
+    char *expected4[] = {"api.foe.fum", "api.foo", "api.foo.bar", "api.foo.baz"};
+    prefix_data p4 = { 0, 4, expected4 };
+    fail_unless(!art_iter_prefix(&t, "api.", 4, test_prefix_cb, &p4));
+    fail_unless(p4.count == p4.max_count, "Count: %d Max: %d", p4.count, p4.max_count);
+
+    // Iterate over api.foo.ba
+    char *expected5[] = {"api.foo.bar"};
+    prefix_data p5 = { 0, 1, expected5 };
+    fail_unless(!art_iter_prefix(&t, "api.foo.bar", 11, test_prefix_cb, &p5));
+    fail_unless(p5.count == p5.max_count, "Count: %d Max: %d", p5.count, p5.max_count);
+
+    // Check a failed iteration on api.end
+    prefix_data p6 = { 0, 0, NULL };
+    fail_unless(!art_iter_prefix(&t, "api.end", 7, test_prefix_cb, &p6));
+    fail_unless(p6.count == 0);
+
+    // Iterate over empty prefix
+    prefix_data p7 = { 0, 6, expected2 };
+    fail_unless(!art_iter_prefix(&t, "", 0, test_prefix_cb, &p7));
+    fail_unless(p7.count == p7.max_count);
+
+    res = destroy_art_tree(&t);
+    fail_unless(res == 0);
+}
+END_TEST
+
