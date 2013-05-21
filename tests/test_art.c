@@ -145,3 +145,46 @@ START_TEST(test_art_insert_delete)
 }
 END_TEST
 
+int iter_cb(void *data, const char* key, uint32_t key_len, void *val) {
+    uint64_t *out = data;
+    uintptr_t line = (uintptr_t)val;
+    uint64_t mask = (line * (key[0] + key_len));
+    out[0]++;
+    out[1] ^= mask;
+    return 0;
+}
+
+START_TEST(test_art_insert_iter)
+{
+    art_tree t;
+    int res = init_art_tree(&t);
+    fail_unless(res == 0);
+
+    int len;
+    char buf[512];
+    FILE *f = fopen("tests/words.txt", "r");
+
+    uint64_t xor_mask = 0;
+    uintptr_t line = 1, nlines;
+    while (fgets(buf, sizeof buf, f)) {
+        len = strlen(buf);
+        buf[len-1] = '\0';
+        fail_unless(NULL ==
+            art_insert(&t, buf, len, (void*)line));
+
+        xor_mask ^= (line * (buf[0] + len));
+        line++;
+    }
+    nlines = line - 1;
+
+    uint64_t out[] = {0, 0};
+    fail_unless(art_iter(&t, iter_cb, &out) == 0);
+
+    fail_unless(out[0] == nlines);
+    fail_unless(out[1] == xor_mask);
+
+    res = destroy_art_tree(&t);
+    fail_unless(res == 0);
+}
+END_TEST
+
