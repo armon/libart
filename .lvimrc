@@ -1,0 +1,3 @@
+" Configure syntastic for this project
+let g:syntastic_c_include_dirs = [ 'src/' ]
+let g:syntastic_c_remove_include_errors = 1
