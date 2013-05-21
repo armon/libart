@@ -13,6 +13,8 @@ As a radix tree, it provides the following:
    the hash function is an O(k) operation, and hash tables have very poor cache locality.
  * Minimum / Maximum value lookups
  * Prefix compression
+ * Ordered iteration
+ * Prefix based iteration
 
 
 Usage
