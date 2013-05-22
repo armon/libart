@@ -197,7 +197,9 @@ typedef struct {
 static int test_prefix_cb(void *data, const char *k, uint32_t k_len, void *val) {
     prefix_data *p = data;
     fail_unless(p->count < p->max_count);
-    fail_unless(memcmp(k, p->expected[p->count], k_len) == 0);
+    fail_unless(memcmp(k, p->expected[p->count], k_len) == 0,
+            "Key: %s Expect: %s", k,
+            p->expected[p->count]);
     p->count++;
     return 0;
 }
@@ -264,6 +266,52 @@ START_TEST(test_art_iter_prefix)
     prefix_data p7 = { 0, 6, expected2 };
     fail_unless(!art_iter_prefix(&t, "", 0, test_prefix_cb, &p7));
     fail_unless(p7.count == p7.max_count);
+
+    res = destroy_art_tree(&t);
+    fail_unless(res == 0);
+}
+END_TEST
+
+START_TEST(test_art_long_prefix)
+{
+    art_tree t;
+    int res = init_art_tree(&t);
+    fail_unless(res == 0);
+
+    uintptr_t v;
+    char *s;
+
+    s = "this:key:has:a:long:prefix:3";
+    v = 3;
+    fail_unless(NULL == art_insert(&t, s, strlen(s)+1, (void*)v));
+
+    s = "this:key:has:a:long:common:prefix:2";
+    v = 2;
+    fail_unless(NULL == art_insert(&t, s, strlen(s)+1, (void*)v));
+
+    s = "this:key:has:a:long:common:prefix:1";
+    v = 1;
+    fail_unless(NULL == art_insert(&t, s, strlen(s)+1, (void*)v));
+
+    // Search for the keys
+    s = "this:key:has:a:long:common:prefix:1";
+    fail_unless(1 == (uintptr_t)art_search(&t, s, strlen(s)+1));
+
+    s = "this:key:has:a:long:common:prefix:2";
+    fail_unless(2 == (uintptr_t)art_search(&t, s, strlen(s)+1));
+
+    s = "this:key:has:a:long:prefix:3";
+    fail_unless(3 == (uintptr_t)art_search(&t, s, strlen(s)+1));
+
+
+    char *expected[] = {
+        "this:key:has:a:long:common:prefix:1",
+        "this:key:has:a:long:common:prefix:2",
+        "this:key:has:a:long:prefix:3",
+    };
+    prefix_data p = { 0, 3, expected };
+    fail_unless(!art_iter_prefix(&t, "this:key:has", 12, test_prefix_cb, &p));
+    fail_unless(p.count == p.max_count, "Count: %d Max: %d", p.count, p.max_count);
 
     res = destroy_art_tree(&t);
     fail_unless(res == 0);
