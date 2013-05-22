@@ -203,8 +203,9 @@ static int check_prefix(art_node *n, char *key, int key_len, int depth) {
  * @return 0 on success.
  */
 static int leaf_matches(art_leaf *n, char *key, int key_len, int depth) {
+    (void)depth;
     // Fail if the key lengths are different
-    if (n->key_len != key_len) return 1;
+    if (n->key_len != (uint32_t)key_len) return 1;
 
     // Compare the keys starting at the depth
     return memcmp(n->key, key, key_len);
@@ -264,6 +265,7 @@ static art_leaf* minimum(art_node *n) {
         case NODE48:
             idx=0;
             while (!((art_node48*)n)->keys[idx]) idx++;
+            idx = ((art_node48*)n)->keys[idx] - 1;
             return minimum(((art_node48*)n)->children[idx]);
         case NODE256:
             idx=0;
@@ -289,6 +291,7 @@ static art_leaf* maximum(art_node *n) {
         case NODE48:
             idx=255;
             while (!((art_node48*)n)->keys[idx]) idx--;
+            idx = ((art_node48*)n)->keys[idx] - 1;
             return maximum(((art_node48*)n)->children[idx]);
         case NODE256:
             idx=255;
@@ -338,6 +341,7 @@ static void copy_header(art_node *dest, art_node *src) {
 }
 
 static void add_child256(art_node256 *n, art_node **ref, unsigned char c, void *child) {
+    (void)ref;
     n->n.num_children++;
     n->children[c] = child;
 }
@@ -517,7 +521,7 @@ static void* recursive_insert(art_node *n, art_node **ref, char *key, int key_le
     if (n->partial_len) {
         // Determine if the prefixes differ, since we need to split
         int prefix_diff = prefix_mismatch(n, key, key_len, depth);
-        if (prefix_diff == n->partial_len) {
+        if ((uint32_t)prefix_diff >= n->partial_len) {
             depth += n->partial_len;
             goto RECURSE_SEARCH;
         }
@@ -817,7 +821,7 @@ int art_iter(art_tree *t, art_callback cb, void *data) {
  */
 static int leaf_prefix_matches(art_leaf *n, char *prefix, int prefix_len) {
     // Fail if the key length is too short
-    if (n->key_len < prefix_len) return 1;
+    if (n->key_len < (uint32_t)prefix_len) return 1;
 
     // Compare the keys
     return memcmp(n->key, prefix, prefix_len);
@@ -861,7 +865,7 @@ int art_iter_prefix(art_tree *t, char *key, int key_len, art_callback cb, void *
 
         // Bail if the prefix does not match
         if (n->partial_len) {
-            prefix_len = check_prefix(n, key, key_len, depth);
+            prefix_len = prefix_mismatch(n, key, key_len, depth);
 
             // If there is no match, search is terminated
             if (!prefix_len)
