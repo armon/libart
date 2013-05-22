@@ -21,6 +21,7 @@ int main(void)
     tcase_add_test(tc1, test_art_insert_iter);
     tcase_add_test(tc1, test_art_iter_prefix);
     tcase_add_test(tc1, test_art_long_prefix);
+    tcase_add_test(tc1, test_art_insert_search_uuid);
 
     srunner_run_all(sr, CK_ENV);
     nf = srunner_ntests_failed(sr);

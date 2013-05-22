@@ -318,3 +318,50 @@ START_TEST(test_art_long_prefix)
 }
 END_TEST
 
+START_TEST(test_art_insert_search_uuid)
+{
+    art_tree t;
+    int res = init_art_tree(&t);
+    fail_unless(res == 0);
+
+    int len;
+    char buf[512];
+    FILE *f = fopen("tests/uuid.txt", "r");
+
+    uintptr_t line = 1;
+    while (fgets(buf, sizeof buf, f)) {
+        len = strlen(buf);
+        buf[len-1] = '\0';
+        fail_unless(NULL ==
+            art_insert(&t, buf, len, (void*)line));
+        line++;
+    }
+
+    // Seek back to the start
+    fseek(f, 0, SEEK_SET);
+
+    // Search for each line
+    line = 1;
+    while (fgets(buf, sizeof buf, f)) {
+        len = strlen(buf);
+        buf[len-1] = '\0';
+
+        uintptr_t val = (uintptr_t)art_search(&t, buf, len);
+	fail_unless(line == val, "Line: %d Val: %" PRIuPTR " Str: %s\n", line,
+	    val, buf);
+        line++;
+    }
+
+    // Check the minimum
+    art_leaf *l = art_minimum(&t);
+    fail_unless(l && strcmp((char*)l->key, "00026bda-e0ea-4cda-8245-522764e9f325") == 0);
+
+    // Check the maximum
+    l = art_maximum(&t);
+    fail_unless(l && strcmp((char*)l->key, "ffffcb46-a92e-4822-82af-a7190f9c1ec5") == 0);
+
+    res = destroy_art_tree(&t);
+    fail_unless(res == 0);
+}
+END_TEST
+
