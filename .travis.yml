@@ -7,4 +7,4 @@ before_install:
   - sudo ldconfig
   - popd
   - scons
-script: ./test_runner
+script: CK_TIMEOUT_MULTIPLIER=3 ./test_runner
