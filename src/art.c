@@ -118,7 +118,7 @@ int destroy_art_tree(art_tree *t) {
 /**
  * Returns the size of the ART tree.
  */
-extern inline uint64_t art_size(art_tree *t);
+extern INLINE uint64_t art_size(art_tree *t);
 
 static art_node** find_child(art_node *n, unsigned char c) {
     int i, mask, bitfield;
@@ -180,7 +180,7 @@ static art_node** find_child(art_node *n, unsigned char c) {
 }
 
 // Simple inlined if
-static inline int min(int a, int b) {
+static INLINE int min(int a, int b) {
     return (a < b) ? a : b;
 }
 

@@ -2,6 +2,12 @@
 #ifndef ART_H
 #define ART_H
 
+#if __STDC_VERSION__ >= 199901L
+#define INLINE inline
+#else
+#define INLINE
+#endif
+
 #define NODE4   1
 #define NODE16  2
 #define NODE48  3
@@ -91,7 +97,7 @@ int destroy_art_tree(art_tree *t);
 /**
  * Returns the size of the ART tree.
  */
-inline uint64_t art_size(art_tree *t) {
+INLINE uint64_t art_size(art_tree *t) {
     return t->size;
 }
 
