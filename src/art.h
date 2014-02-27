@@ -9,6 +9,17 @@
 
 #define MAX_PREFIX_LEN 10
 
+#if defined(__GNUC__) && !defined(__clang__)
+# if __STDC_VERSION__ >= 199901L && 402 == (__GNUC__ * 100 + __GNUC_MINOR__)
+/*
+ * GCC 4.2.2's C99 inline keyword support is pretty broken; avoid. Introduced in
+ * GCC 4.2.something, fixed in 4.3.0. So checking for specific major.minor of
+ * 4.2 is fine.
+ */
+#  define BROKEN_GCC_C99_INLINE
+# endif
+#endif
+
 typedef int(*art_callback)(void *data, const unsigned char *key, uint32_t key_len, void *value);
 
 /**
@@ -91,9 +102,13 @@ int destroy_art_tree(art_tree *t);
 /**
  * Returns the size of the ART tree.
  */
+#ifdef BROKEN_GCC_C99_INLINE
+# define art_size(t) ((t)->size)
+#else
 inline uint64_t art_size(art_tree *t) {
     return t->size;
 }
+#endif
 
 /**
  * Inserts a new value into the ART tree

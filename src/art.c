@@ -118,7 +118,10 @@ int destroy_art_tree(art_tree *t) {
 /**
  * Returns the size of the ART tree.
  */
+
+#ifndef BROKEN_GCC_C99_INLINE
 extern inline uint64_t art_size(art_tree *t);
+#endif
 
 static art_node** find_child(art_node *n, unsigned char c) {
     int i, mask, bitfield;
