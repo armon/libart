@@ -43,7 +43,7 @@ static art_node* alloc_node(uint8_t type) {
  * Initializes an ART tree
  * @return 0 on success.
  */
-int init_art_tree(art_tree *t) {
+int art_tree_init(art_tree *t) {
     t->root = NULL;
     t->size = 0;
     return 0;
@@ -110,7 +110,7 @@ static void destroy_node(art_node *n) {
  * Destroys an ART tree
  * @return 0 on success.
  */
-int destroy_art_tree(art_tree *t) {
+int art_tree_destroy(art_tree *t) {
     destroy_node(t->root);
     return 0;
 }
@@ -222,7 +222,7 @@ static int leaf_matches(art_leaf *n, unsigned char *key, int key_len, int depth)
  * @return NULL if the item was not found, otherwise
  * the value pointer is returned.
  */
-void* art_search(art_tree *t, unsigned char *key, int key_len) {
+void* art_search(art_tree *t, const unsigned char *key, int key_len) {
     art_node **child;
     art_node *n = t->root;
     int prefix_len, depth = 0;
@@ -578,7 +578,7 @@ RECURSE_SEARCH:;
  * @return NULL if the item was newly inserted, otherwise
  * the old value pointer is returned.
  */
-void* art_insert(art_tree *t, unsigned char *key, int key_len, void *value) {
+void* art_insert(art_tree *t, const unsigned char *key, int key_len, void *value) {
     int old_val = 0;
     void *old = recursive_insert(t->root, &t->root, key, key_len, value, 0, &old_val);
     if (!old_val) t->size++;
@@ -744,7 +744,7 @@ static art_leaf* recursive_delete(art_node *n, art_node **ref, unsigned char *ke
  * @return NULL if the item was not found, otherwise
  * the value pointer is returned.
  */
-void* art_delete(art_tree *t, unsigned char *key, int key_len) {
+void* art_delete(art_tree *t, const unsigned char *key, int key_len) {
     art_leaf *l = recursive_delete(t->root, &t->root, key, key_len, 0);
     if (l) {
         t->size--;
@@ -842,7 +842,7 @@ static int leaf_prefix_matches(art_leaf *n, unsigned char *prefix, int prefix_le
  * @arg data Opaque handle passed to the callback
  * @return 0 on success, or the return of the callback.
  */
-int art_iter_prefix(art_tree *t, unsigned char *key, int key_len, art_callback cb, void *data) {
+int art_iter_prefix(art_tree *t, const unsigned char *key, int key_len, art_callback cb, void *data) {
     art_node **child;
     art_node *n = t->root;
     int prefix_len, depth = 0;
@@ -890,4 +890,3 @@ int art_iter_prefix(art_tree *t, unsigned char *key, int key_len, art_callback c
     }
     return 0;
 }
-
