@@ -191,7 +191,7 @@ static inline int min(int a, int b) {
  * Returns the number of prefix characters shared between
  * the key and node.
  */
-static int check_prefix(art_node *n, unsigned char *key, int key_len, int depth) {
+static int check_prefix(const art_node *n, const unsigned char *key, int key_len, int depth) {
     int max_cmp = min(min(n->partial_len, MAX_PREFIX_LEN), key_len - depth);
     int idx;
     for (idx=0; idx < max_cmp; idx++) {
@@ -205,7 +205,7 @@ static int check_prefix(art_node *n, unsigned char *key, int key_len, int depth)
  * Checks if a leaf matches
  * @return 0 on success.
  */
-static int leaf_matches(art_leaf *n, unsigned char *key, int key_len, int depth) {
+static int leaf_matches(const art_leaf *n, const unsigned char *key, int key_len, int depth) {
     (void)depth;
     // Fail if the key lengths are different
     if (n->key_len != (uint32_t)key_len) return 1;
@@ -222,7 +222,7 @@ static int leaf_matches(art_leaf *n, unsigned char *key, int key_len, int depth)
  * @return NULL if the item was not found, otherwise
  * the value pointer is returned.
  */
-void* art_search(art_tree *t, const unsigned char *key, int key_len) {
+void* art_search(const art_tree *t, const unsigned char *key, int key_len) {
     art_node **child;
     art_node *n = t->root;
     int prefix_len, depth = 0;
@@ -254,7 +254,7 @@ void* art_search(art_tree *t, const unsigned char *key, int key_len) {
 }
 
 // Find the minimum leaf under a node
-static art_leaf* minimum(art_node *n) {
+static art_leaf* minimum(const art_node *n) {
     // Handle base cases
     if (!n) return NULL;
     if (IS_LEAF(n)) return LEAF_RAW(n);
@@ -280,7 +280,7 @@ static art_leaf* minimum(art_node *n) {
 }
 
 // Find the maximum leaf under a node
-static art_leaf* maximum(art_node *n) {
+static art_leaf* maximum(const art_node *n) {
     // Handle base cases
     if (!n) return NULL;
     if (IS_LEAF(n)) return LEAF_RAW(n);
@@ -319,7 +319,7 @@ art_leaf* art_maximum(art_tree *t) {
     return maximum((art_node*)t->root);
 }
 
-static art_leaf* make_leaf(unsigned char *key, int key_len, void *value) {
+static art_leaf* make_leaf(const unsigned char *key, int key_len, void *value) {
     art_leaf *l = malloc(sizeof(art_leaf)+key_len);
     l->value = value;
     l->key_len = key_len;
@@ -463,7 +463,7 @@ static void add_child(art_node *n, art_node **ref, unsigned char c, void *child)
 /**
  * Calculates the index at which the prefixes mismatch
  */
-static int prefix_mismatch(art_node *n, unsigned char *key, int key_len, int depth) {
+static int prefix_mismatch(const art_node *n, const unsigned char *key, int key_len, int depth) {
     int max_cmp = min(min(MAX_PREFIX_LEN, n->partial_len), key_len - depth);
     int idx;
     for (idx=0; idx < max_cmp; idx++) {
@@ -484,7 +484,7 @@ static int prefix_mismatch(art_node *n, unsigned char *key, int key_len, int dep
     return idx;
 }
 
-static void* recursive_insert(art_node *n, art_node **ref, unsigned char *key, int key_len, void *value, int depth, int *old) {
+static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *key, int key_len, void *value, int depth, int *old) {
     // If we are at a NULL node, inject a leaf
     if (!n) {
         *ref = (art_node*)SET_LEAF(make_leaf(key, key_len, value));
@@ -694,7 +694,7 @@ static void remove_child(art_node *n, art_node **ref, unsigned char c, art_node 
     }
 }
 
-static art_leaf* recursive_delete(art_node *n, art_node **ref, unsigned char *key, int key_len, int depth) {
+static art_leaf* recursive_delete(art_node *n, art_node **ref, const unsigned char *key, int key_len, int depth) {
     // Search terminated
     if (!n) return NULL;
 
@@ -822,7 +822,7 @@ int art_iter(art_tree *t, art_callback cb, void *data) {
  * Checks if a leaf prefix matches
  * @return 0 on success.
  */
-static int leaf_prefix_matches(art_leaf *n, unsigned char *prefix, int prefix_len) {
+static int leaf_prefix_matches(const art_leaf *n, const unsigned char *prefix, int prefix_len) {
     // Fail if the key length is too short
     if (n->key_len < (uint32_t)prefix_len) return 1;
 
