@@ -98,10 +98,24 @@ typedef struct {
 int art_tree_init(art_tree *t);
 
 /**
+ * DEPRECATED
+ * Initializes an ART tree
+ * @return 0 on success.
+ */
+#define init_art_tree(...) art_tree_init(__VA_ARGS__)
+
+/**
  * Destroys an ART tree
  * @return 0 on success.
  */
 int art_tree_destroy(art_tree *t);
+
+/**
+ * DEPRECATED
+ * Initializes an ART tree
+ * @return 0 on success.
+ */
+#define destroy_art_tree(...) art_tree_destroy(__VA_ARGS__)
 
 /**
  * Returns the size of the ART tree.
