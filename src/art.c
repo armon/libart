@@ -351,8 +351,7 @@ static void add_child256(art_node256 *n, art_node **ref, unsigned char c, void *
 
 static void add_child48(art_node48 *n, art_node **ref, unsigned char c, void *child) {
     if (n->n.num_children < 48) {
-        int pos = 0;
-        while (n->children[pos]) pos++;
+        int pos = n->n.num_children;
         n->children[pos] = child;
         n->keys[c] = pos + 1;
         n->n.num_children++;
