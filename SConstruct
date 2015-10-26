@@ -7,7 +7,7 @@ env_with_err = Environment(
 if "CC" in os.environ:
 	env_with_err["CC"] = os.environ["CC"]
 if "CCFLAGS" not in os.environ:
-	env_with_err["CCFLAGS"] = '-g -std=c99 -D_GNU_SOURCE -Wall -Werror -O3 -pthread'
+	env_with_err["CCFLAGS"] = '-g -std=c99 -D_GNU_SOURCE -Wall -Werror -O3'
 #print "CCCOM is:", env_with_err.subst('$CCCOM')
 
 objs = env_with_err.Object('src/art', 'src/art.c')
