@@ -357,16 +357,16 @@ static void add_child48(art_node48 *n, art_node **ref, unsigned char c, void *ch
         n->keys[c] = pos + 1;
         n->n.num_children++;
     } else {
-        art_node256 *new = (art_node256*)alloc_node(NODE256);
+        art_node256 *new_node = (art_node256*)alloc_node(NODE256);
         for (int i=0;i<256;i++) {
             if (n->keys[i]) {
-                new->children[i] = n->children[n->keys[i] - 1];
+                new_node->children[i] = n->children[n->keys[i] - 1];
             }
         }
-        copy_header((art_node*)new, (art_node*)n);
-        *ref = (art_node*)new;
+        copy_header((art_node*)new_node, (art_node*)n);
+        *ref = (art_node*)new_node;
         free(n);
-        add_child256(new, ref, c, child);
+        add_child256(new_node, ref, c, child);
     }
 }
 
@@ -398,18 +398,18 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
         n->n.num_children++;
 
     } else {
-        art_node48 *new = (art_node48*)alloc_node(NODE48);
+        art_node48 *new_node = (art_node48*)alloc_node(NODE48);
 
         // Copy the child pointers and populate the key map
-        memcpy(new->children, n->children,
+        memcpy(new_node->children, n->children,
                 sizeof(void*)*n->n.num_children);
         for (int i=0;i<n->n.num_children;i++) {
-            new->keys[n->keys[i]] = i + 1;
+            new_node->keys[n->keys[i]] = i + 1;
         }
-        copy_header((art_node*)new, (art_node*)n);
-        *ref = (art_node*)new;
+        copy_header((art_node*)new_node, (art_node*)n);
+        *ref = (art_node*)new_node;
         free(n);
-        add_child48(new, ref, c, child);
+        add_child48(new_node, ref, c, child);
     }
 }
 
@@ -431,17 +431,17 @@ static void add_child4(art_node4 *n, art_node **ref, unsigned char c, void *chil
         n->n.num_children++;
 
     } else {
-        art_node16 *new = (art_node16*)alloc_node(NODE16);
+        art_node16 *new_node = (art_node16*)alloc_node(NODE16);
 
         // Copy the child pointers and the key map
-        memcpy(new->children, n->children,
+        memcpy(new_node->children, n->children,
                 sizeof(void*)*n->n.num_children);
-        memcpy(new->keys, n->keys,
+        memcpy(new_node->keys, n->keys,
                 sizeof(unsigned char)*n->n.num_children);
-        copy_header((art_node*)new, (art_node*)n);
-        *ref = (art_node*)new;
+        copy_header((art_node*)new_node, (art_node*)n);
+        *ref = (art_node*)new_node;
         free(n);
-        add_child16(new, ref, c, child);
+        add_child16(new_node, ref, c, child);
     }
 }
 
@@ -504,19 +504,19 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
         }
 
         // New value, we must split the leaf into a node4
-        art_node4 *new = (art_node4*)alloc_node(NODE4);
+        art_node4 *new_node = (art_node4*)alloc_node(NODE4);
 
         // Create a new leaf
         art_leaf *l2 = make_leaf(key, key_len, value);
 
         // Determine longest prefix
         int longest_prefix = longest_common_prefix(l, l2, depth);
-        new->n.partial_len = longest_prefix;
-        memcpy(new->n.partial, key+depth, min(MAX_PREFIX_LEN, longest_prefix));
+        new_node->n.partial_len = longest_prefix;
+        memcpy(new_node->n.partial, key+depth, min(MAX_PREFIX_LEN, longest_prefix));
         // Add the leafs to the new node4
-        *ref = (art_node*)new;
-        add_child4(new, ref, l->key[depth+longest_prefix], SET_LEAF(l));
-        add_child4(new, ref, l2->key[depth+longest_prefix], SET_LEAF(l2));
+        *ref = (art_node*)new_node;
+        add_child4(new_node, ref, l->key[depth+longest_prefix], SET_LEAF(l));
+        add_child4(new_node, ref, l2->key[depth+longest_prefix], SET_LEAF(l2));
         return NULL;
     }
 
@@ -530,28 +530,28 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
         }
 
         // Create a new node
-        art_node4 *new = (art_node4*)alloc_node(NODE4);
-        *ref = (art_node*)new;
-        new->n.partial_len = prefix_diff;
-        memcpy(new->n.partial, n->partial, min(MAX_PREFIX_LEN, prefix_diff));
+        art_node4 *new_node = (art_node4*)alloc_node(NODE4);
+        *ref = (art_node*)new_node;
+        new_node->n.partial_len = prefix_diff;
+        memcpy(new_node->n.partial, n->partial, min(MAX_PREFIX_LEN, prefix_diff));
 
         // Adjust the prefix of the old node
         if (n->partial_len <= MAX_PREFIX_LEN) {
-            add_child4(new, ref, n->partial[prefix_diff], n);
+            add_child4(new_node, ref, n->partial[prefix_diff], n);
             n->partial_len -= (prefix_diff+1);
             memmove(n->partial, n->partial+prefix_diff+1,
                     min(MAX_PREFIX_LEN, n->partial_len));
         } else {
             n->partial_len -= (prefix_diff+1);
             art_leaf *l = minimum(n);
-            add_child4(new, ref, l->key[depth+prefix_diff], n);
+            add_child4(new_node, ref, l->key[depth+prefix_diff], n);
             memcpy(n->partial, l->key+depth+prefix_diff+1,
                     min(MAX_PREFIX_LEN, n->partial_len));
         }
 
         // Insert the new leaf
         art_leaf *l = make_leaf(key, key_len, value);
-        add_child4(new, ref, key[depth+prefix_diff], SET_LEAF(l));
+        add_child4(new_node, ref, key[depth+prefix_diff], SET_LEAF(l));
         return NULL;
     }
 
@@ -592,15 +592,15 @@ static void remove_child256(art_node256 *n, art_node **ref, unsigned char c) {
     // Resize to a node48 on underflow, not immediately to prevent
     // trashing if we sit on the 48/49 boundary
     if (n->n.num_children == 37) {
-        art_node48 *new = (art_node48*)alloc_node(NODE48);
-        *ref = (art_node*)new;
-        copy_header((art_node*)new, (art_node*)n);
+        art_node48 *new_node = (art_node48*)alloc_node(NODE48);
+        *ref = (art_node*)new_node;
+        copy_header((art_node*)new_node, (art_node*)n);
 
         int pos = 0;
         for (int i=0;i<256;i++) {
             if (n->children[i]) {
-                new->children[pos] = n->children[i];
-                new->keys[i] = pos + 1;
+                new_node->children[pos] = n->children[i];
+                new_node->keys[i] = pos + 1;
                 pos++;
             }
         }
@@ -615,16 +615,16 @@ static void remove_child48(art_node48 *n, art_node **ref, unsigned char c) {
     n->n.num_children--;
 
     if (n->n.num_children == 12) {
-        art_node16 *new = (art_node16*)alloc_node(NODE16);
-        *ref = (art_node*)new;
-        copy_header((art_node*)new, (art_node*)n);
+        art_node16 *new_node = (art_node16*)alloc_node(NODE16);
+        *ref = (art_node*)new_node;
+        copy_header((art_node*)new_node, (art_node*)n);
 
         int child = 0;
         for (int i=0;i<256;i++) {
             pos = n->keys[i];
             if (pos) {
-                new->keys[child] = i;
-                new->children[child] = n->children[pos - 1];
+                new_node->keys[child] = i;
+                new_node->children[child] = n->children[pos - 1];
                 child++;
             }
         }
@@ -639,11 +639,11 @@ static void remove_child16(art_node16 *n, art_node **ref, art_node **l) {
     n->n.num_children--;
 
     if (n->n.num_children == 3) {
-        art_node4 *new = (art_node4*)alloc_node(NODE4);
-        *ref = (art_node*)new;
-        copy_header((art_node*)new, (art_node*)n);
-        memcpy(new->keys, n->keys, 4);
-        memcpy(new->children, n->children, 4*sizeof(void*));
+        art_node4 *new_node = (art_node4*)alloc_node(NODE4);
+        *ref = (art_node*)new_node;
+        copy_header((art_node*)new_node, (art_node*)n);
+        memcpy(new_node->keys, n->keys, 4);
+        memcpy(new_node->children, n->children, 4*sizeof(void*));
         free(n);
     }
 }
