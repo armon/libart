@@ -11,7 +11,7 @@
  */
 #define IS_LEAF(x) (((uintptr_t)x & 1))
 #define SET_LEAF(x) ((void*)((uintptr_t)x | 1))
-#define LEAF_RAW(x) ((void*)((uintptr_t)x & ~1))
+#define LEAF_RAW(x) ((art_leaf*)((void*)((uintptr_t)x & ~1)))
 
 /**
  * Allocates a node of the given type,
@@ -21,16 +21,16 @@ static art_node* alloc_node(uint8_t type) {
     art_node* n;
     switch (type) {
         case NODE4:
-            n = calloc(1, sizeof(art_node4));
+            n = (art_node*)calloc(1, sizeof(art_node4));
             break;
         case NODE16:
-            n = calloc(1, sizeof(art_node16));
+            n = (art_node*)calloc(1, sizeof(art_node16));
             break;
         case NODE48:
-            n = calloc(1, sizeof(art_node48));
+            n = (art_node*)calloc(1, sizeof(art_node48));
             break;
         case NODE256:
-            n = calloc(1, sizeof(art_node256));
+            n = (art_node*)calloc(1, sizeof(art_node256));
             break;
         default:
             abort();
@@ -229,7 +229,7 @@ void* art_search(const art_tree *t, const unsigned char *key, int key_len) {
     while (n) {
         // Might be a leaf
         if (IS_LEAF(n)) {
-            n = LEAF_RAW(n);
+            n = (art_node*)LEAF_RAW(n);
             // Check if the expanded path matches
             if (!leaf_matches((art_leaf*)n, key, key_len, depth)) {
                 return ((art_leaf*)n)->value;
@@ -320,7 +320,7 @@ art_leaf* art_maximum(art_tree *t) {
 }
 
 static art_leaf* make_leaf(const unsigned char *key, int key_len, void *value) {
-    art_leaf *l = malloc(sizeof(art_leaf)+key_len);
+    art_leaf *l = (art_leaf*)malloc(sizeof(art_leaf)+key_len);
     l->value = value;
     l->key_len = key_len;
     memcpy(l->key, key, key_len);
@@ -346,14 +346,14 @@ static void copy_header(art_node *dest, art_node *src) {
 static void add_child256(art_node256 *n, art_node **ref, unsigned char c, void *child) {
     (void)ref;
     n->n.num_children++;
-    n->children[c] = child;
+    n->children[c] = (art_node*)child;
 }
 
 static void add_child48(art_node48 *n, art_node **ref, unsigned char c, void *child) {
     if (n->n.num_children < 48) {
         int pos = 0;
         while (n->children[pos]) pos++;
-        n->children[pos] = child;
+        n->children[pos] = (art_node*)child;
         n->keys[c] = pos + 1;
         n->n.num_children++;
     } else {
@@ -394,7 +394,7 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
 
         // Set the child
         n->keys[idx] = c;
-        n->children[idx] = child;
+        n->children[idx] = (art_node*)child;
         n->n.num_children++;
 
     } else {
@@ -427,7 +427,7 @@ static void add_child4(art_node4 *n, art_node **ref, unsigned char c, void *chil
 
         // Insert element
         n->keys[idx] = c;
-        n->children[idx] = child;
+        n->children[idx] = (art_node*)child;
         n->n.num_children++;
 
     } else {
@@ -849,7 +849,7 @@ int art_iter_prefix(art_tree *t, const unsigned char *key, int key_len, art_call
     while (n) {
         // Might be a leaf
         if (IS_LEAF(n)) {
-            n = LEAF_RAW(n);
+            n = (art_node*)LEAF_RAW(n);
             // Check if the expanded path matches
             if (!leaf_prefix_matches((art_leaf*)n, key, key_len)) {
                 art_leaf *l = (art_leaf*)n;
