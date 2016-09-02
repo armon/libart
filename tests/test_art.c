@@ -420,3 +420,33 @@ START_TEST(test_art_insert_search_uuid)
 }
 END_TEST
 
+START_TEST(test_art_max_prefix_len_scan_prefix)
+{
+    art_tree t;
+    int res = art_tree_init(&t);
+    fail_unless(res == 0);
+
+    char* key1 = "foobarbaz1-test1-foo";
+    fail_unless(NULL == art_insert(&t, (unsigned char*)key1, strlen(key1)+1, NULL));
+
+    char *key2 = "foobarbaz1-test1-bar";
+    fail_unless(NULL == art_insert(&t, (unsigned char*)key2, strlen(key2)+1, NULL));
+
+    char *key3 = "foobarbaz1-test2-foo";
+    fail_unless(NULL == art_insert(&t, (unsigned char*)key3, strlen(key3)+1, NULL));
+
+    fail_unless(art_size(&t) == 3);
+
+    // Iterate over api
+    const char *expected[] = {key2, key1};
+    prefix_data p = { 0, 2, expected };
+    char *prefix = "foobarbaz1-test1";
+    fail_unless(!art_iter_prefix(&t, (unsigned char*)prefix, strlen(prefix), test_prefix_cb, &p));
+    fail_unless(p.count == p.max_count, "Count: %d Max: %d", p.count, p.max_count);
+
+    res = art_tree_destroy(&t);
+    fail_unless(res == 0);
+}
+END_TEST
+
+

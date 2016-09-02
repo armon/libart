@@ -870,12 +870,17 @@ int art_iter_prefix(art_tree *t, const unsigned char *key, int key_len, art_call
         if (n->partial_len) {
             prefix_len = prefix_mismatch(n, key, key_len, depth);
 
+            // Guard if the mis-match is longer than the MAX_PREFIX_LEN
+            if (prefix_len > n->partial_len) {
+                prefix_len = n->partial_len;
+            }
+
             // If there is no match, search is terminated
-            if (!prefix_len)
+            if (!prefix_len) {
                 return 0;
 
             // If we've matched the prefix, iterate on this node
-            else if (depth + prefix_len == key_len) {
+            } else if (depth + prefix_len == key_len) {
                 return recursive_iter(n, cb, data);
             }
 
