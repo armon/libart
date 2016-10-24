@@ -262,18 +262,18 @@ static art_leaf* minimum(const art_node *n) {
     int idx;
     switch (n->type) {
         case NODE4:
-            return minimum(((art_node4*)n)->children[0]);
+            return minimum(((const art_node4*)n)->children[0]);
         case NODE16:
-            return minimum(((art_node16*)n)->children[0]);
+            return minimum(((const art_node16*)n)->children[0]);
         case NODE48:
             idx=0;
-            while (!((art_node48*)n)->keys[idx]) idx++;
-            idx = ((art_node48*)n)->keys[idx] - 1;
-            return minimum(((art_node48*)n)->children[idx]);
+            while (!((const art_node48*)n)->keys[idx]) idx++;
+            idx = ((const art_node48*)n)->keys[idx] - 1;
+            return minimum(((const art_node48*)n)->children[idx]);
         case NODE256:
             idx=0;
-            while (!((art_node256*)n)->children[idx]) idx++;
-            return minimum(((art_node256*)n)->children[idx]);
+            while (!((const art_node256*)n)->children[idx]) idx++;
+            return minimum(((const art_node256*)n)->children[idx]);
         default:
             abort();
     }
@@ -288,18 +288,18 @@ static art_leaf* maximum(const art_node *n) {
     int idx;
     switch (n->type) {
         case NODE4:
-            return maximum(((art_node4*)n)->children[n->num_children-1]);
+            return maximum(((const art_node4*)n)->children[n->num_children-1]);
         case NODE16:
-            return maximum(((art_node16*)n)->children[n->num_children-1]);
+            return maximum(((const art_node16*)n)->children[n->num_children-1]);
         case NODE48:
             idx=255;
-            while (!((art_node48*)n)->keys[idx]) idx--;
-            idx = ((art_node48*)n)->keys[idx] - 1;
-            return maximum(((art_node48*)n)->children[idx]);
+            while (!((const art_node48*)n)->keys[idx]) idx--;
+            idx = ((const art_node48*)n)->keys[idx] - 1;
+            return maximum(((const art_node48*)n)->children[idx]);
         case NODE256:
             idx=255;
-            while (!((art_node256*)n)->children[idx]) idx--;
-            return maximum(((art_node256*)n)->children[idx]);
+            while (!((const art_node256*)n)->children[idx]) idx--;
+            return maximum(((const art_node256*)n)->children[idx]);
         default:
             abort();
     }
@@ -871,7 +871,7 @@ int art_iter_prefix(art_tree *t, const unsigned char *key, int key_len, art_call
             prefix_len = prefix_mismatch(n, key, key_len, depth);
 
             // Guard if the mis-match is longer than the MAX_PREFIX_LEN
-            if (prefix_len > n->partial_len) {
+            if ((uint32_t)prefix_len > n->partial_len) {
                 prefix_len = n->partial_len;
             }
 
