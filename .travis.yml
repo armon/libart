@@ -10,4 +10,4 @@ before_install:
   - sudo ldconfig
   - popd
   - scons
-script: CK_TIMEOUT_MULTIPLIER=3 ./test_runner
+script: CK_TIMEOUT_MULTIPLIER=3 LD_LIBRARY_PATH=`pwd` ./test_runner
