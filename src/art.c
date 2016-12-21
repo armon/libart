@@ -134,8 +134,11 @@ static art_node** find_child(art_node *n, unsigned char c) {
     switch (n->type) {
         case NODE4:
             p.p1 = (art_node4*)n;
-            for (i=0;i < n->num_children; i++) {
-                if (p.p1->keys[i] == c)
+            for (i=0 ; i < n->num_children; i++) {
+		/* this cast works around a bug in gcc 5.1 when unrolling loops
+		 * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=59124
+		 */
+                if (((unsigned char*)p.p1->keys)[i] == c)
                     return &p.p1->children[i];
             }
             break;
