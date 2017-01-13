@@ -148,7 +148,6 @@ static art_node** find_child(art_node *n, unsigned char c) {
             break;
 
         {
-        __m128i cmp;
         case NODE16:
             p.p2 = (art_node16*)n;
 
