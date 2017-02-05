@@ -176,13 +176,14 @@ static art_node** find_child(art_node *n, unsigned char c) {
                 bitfield = _mm_movemask_epi8(cmp) & mask;
             #else
                 // Compare the key to all 16 stored keys
-                unsigned bitfield = 0;
-                for (short i = 0; i < 16; ++i) {
+                bitfield = 0;
+                for (i = 0; i < 16; ++i) {
                     if (p.p2->keys[i] == c)
                         bitfield |= (1 << i);
                 }
 
                 // Use a mask to ignore children that don't exist
+                mask = (1 << n->num_children) - 1;
                 bitfield &= mask;
             #endif
             #endif
@@ -354,7 +355,7 @@ art_leaf* art_maximum(art_tree *t) {
 }
 
 static art_leaf* make_leaf(const unsigned char *key, int key_len, void *value) {
-    art_leaf *l = (art_leaf*)malloc(sizeof(art_leaf)+key_len);
+    art_leaf *l = (art_leaf*)calloc(1, sizeof(art_leaf)+key_len);
     l->value = value;
     l->key_len = key_len;
     memcpy(l->key, key, key_len);
