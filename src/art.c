@@ -723,8 +723,7 @@ static void remove_child4(art_node4 *n, art_node **ref, art_node **l) {
             if (prefix < MAX_PREFIX_LEN) {
                 n->n.partial[prefix] = n->keys[0];
                 prefix++;
-            }
-            if (prefix < MAX_PREFIX_LEN) {
+
                 int sub_prefix = min(child->partial_len, MAX_PREFIX_LEN - prefix);
                 memcpy(n->n.partial+prefix, child->partial, sub_prefix);
                 prefix += sub_prefix;
