@@ -19,11 +19,13 @@ int main(void)
     tcase_add_test(tc1, test_art_insert_verylong);
     tcase_add_test(tc1, test_art_insert_search);
     tcase_add_test(tc1, test_art_insert_delete);
+    tcase_add_test(tc1, test_art_insert_random_delete);
     tcase_add_test(tc1, test_art_insert_iter);
     tcase_add_test(tc1, test_art_iter_prefix);
     tcase_add_test(tc1, test_art_long_prefix);
     tcase_add_test(tc1, test_art_insert_search_uuid);
     tcase_add_test(tc1, test_art_max_prefix_len_scan_prefix);
+    tcase_set_timeout(tc1, 180);
 
     srunner_run_all(sr, CK_ENV);
     nf = srunner_ntests_failed(sr);
