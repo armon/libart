@@ -200,6 +200,48 @@ START_TEST(test_art_insert_delete)
 }
 END_TEST
 
+START_TEST(test_art_insert_random_delete)
+{
+    art_tree t;
+    int res = art_tree_init(&t);
+    fail_unless(res == 0);
+
+    int len;
+    char buf[512];
+    FILE *f = fopen("tests/words.txt", "r");
+
+    uintptr_t line = 1;
+    while (fgets(buf, sizeof buf, f)) {
+        len = strlen(buf);
+        buf[len-1] = '\0';
+        fail_unless(NULL ==
+            art_insert(&t, (unsigned char*)buf, len, (void*)line));
+        line++;
+    }
+
+    // Can be improved ensuring one delete on each node type
+    // A is in 48 node
+    uintptr_t lineno = 1;
+    // Search first, ensure all entries are visible
+    uintptr_t val = (uintptr_t)art_search(&t, (unsigned char*)"A", strlen("A")+1);
+    fail_unless(lineno == val, "Line: %d Val: %" PRIuPTR " Str: %s\n", lineno,
+        val, "A");
+
+    // Delete a single entry, should get lineno back
+    val = (uintptr_t )art_delete(&t, (unsigned char *) "A", strlen("A")+1);
+    fail_unless(lineno == val, "Line: %d Val: %" PRIuPTR " Str: %s\n", lineno,
+        val, "A");
+
+    // Ensure  the entry is no longer visible
+    val = (uintptr_t)art_search(&t, (unsigned char*)"A", strlen("A")+1);
+    fail_unless(0 == val, "Line: %d Val: %" PRIuPTR " Str: %s\n", 0,
+        val, "A");
+
+    res = art_tree_destroy(&t);
+    fail_unless(res == 0);
+}
+END_TEST
+
 int iter_cb(void *data, const unsigned char* key, uint32_t key_len, void *val) {
     uint64_t *out = (uint64_t*)data;
     uintptr_t line = (uintptr_t)val;
@@ -448,5 +490,3 @@ START_TEST(test_art_max_prefix_len_scan_prefix)
     fail_unless(res == 0);
 }
 END_TEST
-
-

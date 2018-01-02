@@ -68,7 +68,7 @@ static void destroy_node(art_node *n) {
     }
 
     // Handle each node type
-    int i;
+    int i, idx;
     union {
         art_node4 *p1;
         art_node16 *p2;
@@ -92,8 +92,10 @@ static void destroy_node(art_node *n) {
 
         case NODE48:
             p.p3 = (art_node48*)n;
-            for (i=0;i<n->num_children;i++) {
-                destroy_node(p.p3->children[i]);
+            for (i=0;i<256;i++) {
+                idx = ((art_node48*)n)->keys[i]; 
+                if (!idx) continue; 
+                destroy_node(p.p3->children[idx-1]);
             }
             break;
 
