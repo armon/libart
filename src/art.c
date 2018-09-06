@@ -504,7 +504,7 @@ static void add_child4(art_node4 *n, art_node **ref, unsigned char c, void *chil
         memcpy(new_node->children, n->children,
                 sizeof(void*)*n->n.num_children);
         for (unsigned i=0;i<4;i++)
-            new_node->keys[i]=flip_sign(n->keys[i]);
+            new_node->keys[i] = flip_sign(n->keys[i]);
         copy_header((art_node*)new_node, (art_node*)n);
         *ref = (art_node*)new_node;
         free(n);
@@ -710,8 +710,7 @@ static void remove_child16(art_node16 *n, art_node **ref, art_node **l) {
         *ref = (art_node*)new_node;
         copy_header((art_node*)new_node, (art_node*)n);
         for (unsigned i=0;i<4;i++)
-            new_node->keys[i]=flip_sign(n->keys[i]);
-        memcpy(new_node->keys, n->keys, 4);
+            new_node->keys[i] = flip_sign(n->keys[i]);
         memcpy(new_node->children, n->children, 4*sizeof(void*));
         free(n);
     }
