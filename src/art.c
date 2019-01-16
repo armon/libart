@@ -13,6 +13,11 @@
 #endif
 #endif
 
+static inline unsigned char flip_sign(unsigned char byte) {
+    // Flip the sign bit, enables signed SSE comparison of unsigned values, used by Node16
+    return byte ^ 128;
+}
+
 /**
  * Macros to manipulate pointer tags
  */
@@ -155,12 +160,12 @@ static art_node** find_child(art_node *n, unsigned char c) {
         {
         case NODE16:
             p.p2 = (art_node16*)n;
-
+            unsigned char flipped_c = flip_sign(c);
             // support non-86 architectures
             #ifdef __i386__
                 // Compare the key to all 16 stored keys
                 __m128i cmp;
-                cmp = _mm_cmpeq_epi8(_mm_set1_epi8(c),
+                cmp = _mm_cmpeq_epi8(_mm_set1_epi8(flipped_c),
                         _mm_loadu_si128((__m128i*)p.p2->keys));
                 
                 // Use a mask to ignore children that don't exist
@@ -170,7 +175,7 @@ static art_node** find_child(art_node *n, unsigned char c) {
             #ifdef __amd64__
                 // Compare the key to all 16 stored keys
                 __m128i cmp;
-                cmp = _mm_cmpeq_epi8(_mm_set1_epi8(c),
+                cmp = _mm_cmpeq_epi8(_mm_set1_epi8(flipped_c),
                         _mm_loadu_si128((__m128i*)p.p2->keys));
 
                 // Use a mask to ignore children that don't exist
@@ -180,7 +185,7 @@ static art_node** find_child(art_node *n, unsigned char c) {
                 // Compare the key to all 16 stored keys
                 bitfield = 0;
                 for (i = 0; i < 16; ++i) {
-                    if (p.p2->keys[i] == c)
+                    if (p.p2->keys[i] == flipped_c)
                         bitfield |= (1 << i);
                 }
 
@@ -410,13 +415,13 @@ static void add_child48(art_node48 *n, art_node **ref, unsigned char c, void *ch
 static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *child) {
     if (n->n.num_children < 16) {
         unsigned mask = (1 << n->n.num_children) - 1;
-        
+        unsigned char flipped_c = flip_sign(c);
         // support non-x86 architectures
         #ifdef __i386__
             __m128i cmp;
 
             // Compare the key to all 16 stored keys
-            cmp = _mm_cmplt_epi8(_mm_set1_epi8(c),
+            cmp = _mm_cmplt_epi8(_mm_set1_epi8(flipped_c),
                     _mm_loadu_si128((__m128i*)n->keys));
 
             // Use a mask to ignore children that don't exist
@@ -426,7 +431,7 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
             __m128i cmp;
 
             // Compare the key to all 16 stored keys
-            cmp = _mm_cmplt_epi8(_mm_set1_epi8(c),
+            cmp = _mm_cmplt_epi8(_mm_set1_epi8(flipped_c),
                     _mm_loadu_si128((__m128i*)n->keys));
 
             // Use a mask to ignore children that don't exist
@@ -435,7 +440,7 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
             // Compare the key to all 16 stored keys
             unsigned bitfield = 0;
             for (short i = 0; i < 16; ++i) {
-                if (c < n->keys[i])
+                if (flipped_c < n->keys[i])
                     bitfield |= (1 << i);
             }
 
@@ -455,7 +460,7 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
             idx = n->n.num_children;
 
         // Set the child
-        n->keys[idx] = c;
+        n->keys[idx] = flipped_c;
         n->children[idx] = (art_node*)child;
         n->n.num_children++;
 
@@ -466,7 +471,7 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
         memcpy(new_node->children, n->children,
                 sizeof(void*)*n->n.num_children);
         for (int i=0;i<n->n.num_children;i++) {
-            new_node->keys[n->keys[i]] = i + 1;
+            new_node->keys[flip_sign(n->keys[i])] = i + 1;
         }
         copy_header((art_node*)new_node, (art_node*)n);
         *ref = (art_node*)new_node;
@@ -498,8 +503,8 @@ static void add_child4(art_node4 *n, art_node **ref, unsigned char c, void *chil
         // Copy the child pointers and the key map
         memcpy(new_node->children, n->children,
                 sizeof(void*)*n->n.num_children);
-        memcpy(new_node->keys, n->keys,
-                sizeof(unsigned char)*n->n.num_children);
+        for (unsigned i=0;i<4;i++)
+            new_node->keys[i] = flip_sign(n->keys[i]);
         copy_header((art_node*)new_node, (art_node*)n);
         *ref = (art_node*)new_node;
         free(n);
@@ -685,7 +690,7 @@ static void remove_child48(art_node48 *n, art_node **ref, unsigned char c) {
         for (int i=0;i<256;i++) {
             pos = n->keys[i];
             if (pos) {
-                new_node->keys[child] = i;
+                new_node->keys[child] = flip_sign(i);
                 new_node->children[child] = n->children[pos - 1];
                 child++;
             }
@@ -704,7 +709,8 @@ static void remove_child16(art_node16 *n, art_node **ref, art_node **l) {
         art_node4 *new_node = (art_node4*)alloc_node(NODE4);
         *ref = (art_node*)new_node;
         copy_header((art_node*)new_node, (art_node*)n);
-        memcpy(new_node->keys, n->keys, 4);
+        for (unsigned i=0;i<4;i++)
+            new_node->keys[i] = flip_sign(n->keys[i]);
         memcpy(new_node->children, n->children, 4*sizeof(void*));
         free(n);
     }
