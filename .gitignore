@@ -2,3 +2,4 @@
 .sconsign.dblite
 *~
 test_runner
+src/libart.so
