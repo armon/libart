@@ -66,7 +66,7 @@ typedef struct TestStats {
 struct TestResult {
   enum test_result rtype;     /* Type of result */
   enum ck_result_ctx ctx;     /* When the result occurred */
-  char *file;    /* File where the test occured */
+  char *file;    /* File where the test occurred */
   int line;      /* Line number where the test occurred */
   int iter;      /* The iteration value for looping tests */
   const char *tcname;  /* Test case that generated the result */

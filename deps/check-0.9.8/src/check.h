@@ -229,7 +229,7 @@ static void __testname (int _i CK_ATTRIBUTE_UNUSED)\
    FIXME:   strcmp (str1, str2) due to excessive string length. */
 #define fail_if(expr, ...)\
         _fail_unless(!(expr), __FILE__, __LINE__,\
-        "Failure '"#expr"' occured" , ## __VA_ARGS__, NULL)
+        "Failure '"#expr"' occurred" , ## __VA_ARGS__, NULL)
 
 /* Always fail */
 #define fail(...) _fail_unless(0, __FILE__, __LINE__, "Failed" , ## __VA_ARGS__, NULL)
@@ -306,9 +306,9 @@ int CK_EXPORT tr_rtype (TestResult *tr);
 enum ck_result_ctx CK_EXPORT tr_ctx (TestResult *tr); 
 /* Failure message */
 const char * CK_EXPORT tr_msg (TestResult *tr);
-/* Line number at which failure occured */
+/* Line number at which failure occurred */
 int CK_EXPORT tr_lno (TestResult *tr);
-/* File name at which failure occured */
+/* File name at which failure occurred */
 const char * CK_EXPORT tr_lfile (TestResult *tr);
 /* Test case in which unit test was run */
 const char * CK_EXPORT tr_tcname (TestResult *tr);
