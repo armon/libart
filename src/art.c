@@ -546,7 +546,7 @@ static int prefix_mismatch(const art_node *n, const unsigned char *key, int key_
     return idx;
 }
 
-static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *key, int key_len, void *value, int depth, int *old) {
+static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *key, int key_len, void *value, int depth, int *old, int replace) {
     // If we are at a NULL node, inject a leaf
     if (!n) {
         *ref = (art_node*)SET_LEAF(make_leaf(key, key_len, value));
@@ -561,7 +561,7 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
         if (!leaf_matches(l, key, key_len, depth)) {
             *old = 1;
             void *old_val = l->value;
-            l->value = value;
+            if(replace) l->value = value;
             return old_val;
         }
 
@@ -622,7 +622,7 @@ RECURSE_SEARCH:;
     // Find a child to recurse to
     art_node **child = find_child(n, key[depth]);
     if (child) {
-        return recursive_insert(*child, child, key, key_len, value, depth+1, old);
+        return recursive_insert(*child, child, key, key_len, value, depth+1, old, replace);
     }
 
     // No child, node goes within us
@@ -632,17 +632,33 @@ RECURSE_SEARCH:;
 }
 
 /**
- * Inserts a new value into the ART tree
- * @arg t The tree
- * @arg key The key
- * @arg key_len The length of the key
- * @arg value Opaque value.
- * @return NULL if the item was newly inserted, otherwise
+ * inserts a new value into the art tree
+ * @arg t the tree
+ * @arg key the key
+ * @arg key_len the length of the key
+ * @arg value opaque value.
+ * @return null if the item was newly inserted, otherwise
  * the old value pointer is returned.
  */
 void* art_insert(art_tree *t, const unsigned char *key, int key_len, void *value) {
     int old_val = 0;
-    void *old = recursive_insert(t->root, &t->root, key, key_len, value, 0, &old_val);
+    void *old = recursive_insert(t->root, &t->root, key, key_len, value, 0, &old_val, 1);
+    if (!old_val) t->size++;
+    return old;
+}
+
+/**
+ * inserts a new value into the art tree (no replace)
+ * @arg t the tree
+ * @arg key the key
+ * @arg key_len the length of the key
+ * @arg value opaque value.
+ * @return null if the item was newly inserted, otherwise
+ * the old value pointer is returned.
+ */
+void* art_insert_no_replace(art_tree *t, const unsigned char *key, int key_len, void *value) {
+    int old_val = 0;
+    void *old = recursive_insert(t->root, &t->root, key, key_len, value, 0, &old_val, 0);
     if (!old_val) t->size++;
     return old;
 }
