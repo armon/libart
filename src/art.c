@@ -13,6 +13,23 @@
 #endif
 #endif
 
+#if defined(__i386__) || defined(__amd64__)
+/* From http://www.alfredklomp.com/programming/sse-intrinsics/ */
+static inline __m128i
+_mm_cmpgt_epu8(__m128i x, __m128i y)
+{
+    // Returns 0xFF where x > y:
+    return _mm_andnot_si128(_mm_cmpeq_epi8(x, y),
+                            _mm_cmpeq_epi8(_mm_max_epu8(x, y), x));
+}
+static inline __m128i
+_mm_cmplt_epu8(__m128i x, __m128i y)
+{
+    // Returns 0xFF where x < y:
+    return _mm_cmpgt_epu8(y, x);
+}
+#endif
+
 /**
  * Macros to manipulate pointer tags
  */
@@ -416,7 +433,7 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
             __m128i cmp;
 
             // Compare the key to all 16 stored keys
-            cmp = _mm_cmplt_epi8(_mm_set1_epi8(c),
+            cmp = _mm_cmplt_epu8(_mm_set1_epi8(c),
                     _mm_loadu_si128((__m128i*)n->keys));
 
             // Use a mask to ignore children that don't exist
@@ -426,7 +443,7 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
             __m128i cmp;
 
             // Compare the key to all 16 stored keys
-            cmp = _mm_cmplt_epi8(_mm_set1_epi8(c),
+            cmp = _mm_cmplt_epu8(_mm_set1_epi8(c),
                     _mm_loadu_si128((__m128i*)n->keys));
 
             // Use a mask to ignore children that don't exist
