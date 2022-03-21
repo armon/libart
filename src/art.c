@@ -16,9 +16,9 @@
 /**
  * Macros to manipulate pointer tags
  */
-#define IS_LEAF(x) (((uintptr_t)x & 1))
-#define SET_LEAF(x) ((void*)((uintptr_t)x | 1))
-#define LEAF_RAW(x) ((art_leaf*)((void*)((uintptr_t)x & ~1)))
+#define IS_LEAF(x) (((uintptr_t)x & 1u) != 0u)
+#define SET_LEAF(x) ((void*)((uintptr_t)x | 1u))
+#define LEAF_RAW(x) ((art_leaf*)((void*)((uintptr_t)x & ~1u)))
 
 /**
  * Allocates a node of the given type,
