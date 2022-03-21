@@ -59,7 +59,7 @@ int art_tree_init(art_tree *t) {
 // Recursively destroys the tree
 static void destroy_node(art_node *n) {
     // Break if null
-    if (!n) return;
+    if (n == NULL) return;
 
     // Special case leafs
     if (IS_LEAF(n)) {
@@ -94,7 +94,7 @@ static void destroy_node(art_node *n) {
             p.p3 = (art_node48*)n;
             for (i=0;i<256;i++) {
                 idx = ((art_node48*)n)->keys[i]; 
-                if (!idx) continue; 
+                if (idx == 0) continue;
                 destroy_node(p.p3->children[idx-1]);
             }
             break;
@@ -102,7 +102,7 @@ static void destroy_node(art_node *n) {
         case NODE256:
             p.p4 = (art_node256*)n;
             for (i=0;i<256;i++) {
-                if (p.p4->children[i])
+                if (p.p4->children[i] != NULL)
                     destroy_node(p.p4->children[i]);
             }
             break;
@@ -195,7 +195,7 @@ static art_node** find_child(art_node *n, unsigned char c) {
              * return the pointer match using ctz to get
              * the index.
              */
-            if (bitfield)
+            if (bitfield != 0)
                 return &p.p2->children[__builtin_ctz(bitfield)];
             break;
         }
@@ -203,13 +203,13 @@ static art_node** find_child(art_node *n, unsigned char c) {
         case NODE48:
             p.p3 = (art_node48*)n;
             i = p.p3->keys[c];
-            if (i)
+            if (i != 0)
                 return &p.p3->children[i-1];
             break;
 
         case NODE256:
             p.p4 = (art_node256*)n;
-            if (p.p4->children[c])
+            if (p.p4->children[c] != NULL)
                 return &p.p4->children[c];
             break;
 
@@ -263,19 +263,19 @@ void* art_search(const art_tree *t, const unsigned char *key, int key_len) {
     art_node **child;
     art_node *n = t->root;
     int prefix_len, depth = 0;
-    while (n) {
+    while (n != NULL) {
         // Might be a leaf
         if (IS_LEAF(n)) {
             n = (art_node*)LEAF_RAW(n);
             // Check if the expanded path matches
-            if (!leaf_matches((art_leaf*)n, key, key_len, depth)) {
+            if (leaf_matches((art_leaf*)n, key, key_len, depth) == 0) {
                 return ((art_leaf*)n)->value;
             }
             return NULL;
         }
 
         // Bail if the prefix does not match
-        if (n->partial_len) {
+        if (n->partial_len != 0) {
             prefix_len = check_prefix(n, key, key_len, depth);
             if (prefix_len != min(MAX_PREFIX_LEN, n->partial_len))
                 return NULL;
@@ -284,7 +284,7 @@ void* art_search(const art_tree *t, const unsigned char *key, int key_len) {
 
         // Recursively search
         child = find_child(n, key[depth]);
-        n = (child) ? *child : NULL;
+        n = (child != NULL) ? *child : NULL;
         depth++;
     }
     return NULL;
@@ -293,7 +293,7 @@ void* art_search(const art_tree *t, const unsigned char *key, int key_len) {
 // Find the minimum leaf under a node
 static art_leaf* minimum(const art_node *n) {
     // Handle base cases
-    if (!n) return NULL;
+    if (n == NULL) return NULL;
     if (IS_LEAF(n)) return LEAF_RAW(n);
 
     int idx;
@@ -304,12 +304,12 @@ static art_leaf* minimum(const art_node *n) {
             return minimum(((const art_node16*)n)->children[0]);
         case NODE48:
             idx=0;
-            while (!((const art_node48*)n)->keys[idx]) idx++;
+            while (((const art_node48*)n)->keys[idx] == 0) idx++;
             idx = ((const art_node48*)n)->keys[idx] - 1;
             return minimum(((const art_node48*)n)->children[idx]);
         case NODE256:
             idx=0;
-            while (!((const art_node256*)n)->children[idx]) idx++;
+            while (((const art_node256*)n)->children[idx] == NULL) idx++;
             return minimum(((const art_node256*)n)->children[idx]);
         default:
             abort();
@@ -330,12 +330,12 @@ static art_leaf* maximum(const art_node *n) {
             return maximum(((const art_node16*)n)->children[n->num_children-1]);
         case NODE48:
             idx=255;
-            while (!((const art_node48*)n)->keys[idx]) idx--;
+            while (((const art_node48*)n)->keys[idx] == 0) idx--;
             idx = ((const art_node48*)n)->keys[idx] - 1;
             return maximum(((const art_node48*)n)->children[idx]);
         case NODE256:
             idx=255;
-            while (!((const art_node256*)n)->children[idx]) idx--;
+            while (((const art_node256*)n)->children[idx] == NULL) idx--;
             return maximum(((const art_node256*)n)->children[idx]);
         default:
             abort();
@@ -389,14 +389,14 @@ static void add_child256(art_node256 *n, art_node **ref, unsigned char c, void *
 static void add_child48(art_node48 *n, art_node **ref, unsigned char c, void *child) {
     if (n->n.num_children < 48) {
         int pos = 0;
-        while (n->children[pos]) pos++;
+        while (n->children[pos] != NULL) pos++;
         n->children[pos] = (art_node*)child;
         n->keys[c] = pos + 1;
         n->n.num_children++;
     } else {
         art_node256 *new_node = (art_node256*)alloc_node(NODE256);
         for (int i=0;i<256;i++) {
-            if (n->keys[i]) {
+            if (n->keys[i] != 0) {
                 new_node->children[i] = n->children[n->keys[i] - 1];
             }
         }
@@ -446,7 +446,7 @@ static void add_child16(art_node16 *n, art_node **ref, unsigned char c, void *ch
 
         // Check if less than any
         unsigned idx;
-        if (bitfield) {
+        if (bitfield != 0) {
             idx = __builtin_ctz(bitfield);
             memmove(n->keys+idx+1,n->keys+idx,n->n.num_children-idx);
             memmove(n->children+idx+1,n->children+idx,
@@ -548,7 +548,7 @@ static int prefix_mismatch(const art_node *n, const unsigned char *key, int key_
 
 static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *key, int key_len, void *value, int depth, int *old, int replace) {
     // If we are at a NULL node, inject a leaf
-    if (!n) {
+    if (n == NULL) {
         *ref = (art_node*)SET_LEAF(make_leaf(key, key_len, value));
         return NULL;
     }
@@ -558,10 +558,10 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
         art_leaf *l = LEAF_RAW(n);
 
         // Check if we are updating an existing value
-        if (!leaf_matches(l, key, key_len, depth)) {
+        if (leaf_matches(l, key, key_len, depth) == 0) {
             *old = 1;
             void *old_val = l->value;
-            if(replace) l->value = value;
+            if (replace != 0) l->value = value;
             return old_val;
         }
 
@@ -583,7 +583,7 @@ static void* recursive_insert(art_node *n, art_node **ref, const unsigned char *
     }
 
     // Check if given node has a prefix
-    if (n->partial_len) {
+    if (n->partial_len != 0) {
         // Determine if the prefixes differ, since we need to split
         int prefix_diff = prefix_mismatch(n, key, key_len, depth);
         if ((uint32_t)prefix_diff >= n->partial_len) {
@@ -621,7 +621,7 @@ RECURSE_SEARCH:;
 
     // Find a child to recurse to
     art_node **child = find_child(n, key[depth]);
-    if (child) {
+    if (child != NULL) {
         return recursive_insert(*child, child, key, key_len, value, depth+1, old, replace);
     }
 
@@ -643,7 +643,7 @@ RECURSE_SEARCH:;
 void* art_insert(art_tree *t, const unsigned char *key, int key_len, void *value) {
     int old_val = 0;
     void *old = recursive_insert(t->root, &t->root, key, key_len, value, 0, &old_val, 1);
-    if (!old_val) t->size++;
+    if (old_val == 0) t->size++;
     return old;
 }
 
@@ -659,7 +659,7 @@ void* art_insert(art_tree *t, const unsigned char *key, int key_len, void *value
 void* art_insert_no_replace(art_tree *t, const unsigned char *key, int key_len, void *value) {
     int old_val = 0;
     void *old = recursive_insert(t->root, &t->root, key, key_len, value, 0, &old_val, 0);
-    if (!old_val) t->size++;
+    if (old_val == 0) t->size++;
     return old;
 }
 
@@ -676,7 +676,7 @@ static void remove_child256(art_node256 *n, art_node **ref, unsigned char c) {
 
         int pos = 0;
         for (int i=0;i<256;i++) {
-            if (n->children[i]) {
+            if (n->children[i] != NULL) {
                 new_node->children[pos] = n->children[i];
                 new_node->keys[i] = pos + 1;
                 pos++;
@@ -700,7 +700,7 @@ static void remove_child48(art_node48 *n, art_node **ref, unsigned char c) {
         int child = 0;
         for (int i=0;i<256;i++) {
             pos = n->keys[i];
-            if (pos) {
+            if (pos != 0) {
                 new_node->keys[child] = i;
                 new_node->children[child] = n->children[pos - 1];
                 child++;
@@ -774,12 +774,12 @@ static void remove_child(art_node *n, art_node **ref, unsigned char c, art_node 
 
 static art_leaf* recursive_delete(art_node *n, art_node **ref, const unsigned char *key, int key_len, int depth) {
     // Search terminated
-    if (!n) return NULL;
+    if (n == NULL) return NULL;
 
     // Handle hitting a leaf node
     if (IS_LEAF(n)) {
         art_leaf *l = LEAF_RAW(n);
-        if (!leaf_matches(l, key, key_len, depth)) {
+        if (leaf_matches(l, key, key_len, depth) == 0) {
             *ref = NULL;
             return l;
         }
@@ -787,7 +787,7 @@ static art_leaf* recursive_delete(art_node *n, art_node **ref, const unsigned ch
     }
 
     // Bail if the prefix does not match
-    if (n->partial_len) {
+    if (n->partial_len != 0) {
         int prefix_len = check_prefix(n, key, key_len, depth);
         if (prefix_len != min(MAX_PREFIX_LEN, n->partial_len)) {
             return NULL;
@@ -797,12 +797,12 @@ static art_leaf* recursive_delete(art_node *n, art_node **ref, const unsigned ch
 
     // Find child node
     art_node **child = find_child(n, key[depth]);
-    if (!child) return NULL;
+    if (child == NULL) return NULL;
 
     // If the child is leaf, delete from this node
     if (IS_LEAF(*child)) {
         art_leaf *l = LEAF_RAW(*child);
-        if (!leaf_matches(l, key, key_len, depth)) {
+	if (leaf_matches(l, key, key_len, depth) == 0) {
             remove_child(n, ref, key[depth], child);
             return l;
         }
@@ -824,7 +824,7 @@ static art_leaf* recursive_delete(art_node *n, art_node **ref, const unsigned ch
  */
 void* art_delete(art_tree *t, const unsigned char *key, int key_len) {
     art_leaf *l = recursive_delete(t->root, &t->root, key, key_len, 0);
-    if (l) {
+    if (l != NULL) {
         t->size--;
         void *old = l->value;
         free(l);
@@ -836,7 +836,7 @@ void* art_delete(art_tree *t, const unsigned char *key, int key_len) {
 // Recursively iterates over the tree
 static int recursive_iter(art_node *n, art_callback cb, void *data) {
     // Handle base cases
-    if (!n) return 0;
+    if (n == NULL) return 0;
     if (IS_LEAF(n)) {
         art_leaf *l = LEAF_RAW(n);
         return cb(data, (const unsigned char*)l->key, l->key_len, l->value);
@@ -847,32 +847,32 @@ static int recursive_iter(art_node *n, art_callback cb, void *data) {
         case NODE4:
             for (int i=0; i < n->num_children; i++) {
                 res = recursive_iter(((art_node4*)n)->children[i], cb, data);
-                if (res) return res;
+                if (res != 0) return res;
             }
             break;
 
         case NODE16:
             for (int i=0; i < n->num_children; i++) {
                 res = recursive_iter(((art_node16*)n)->children[i], cb, data);
-                if (res) return res;
+                if (res != 0) return res;
             }
             break;
 
         case NODE48:
             for (int i=0; i < 256; i++) {
                 idx = ((art_node48*)n)->keys[i];
-                if (!idx) continue;
+                if (idx == 0) continue;
 
                 res = recursive_iter(((art_node48*)n)->children[idx-1], cb, data);
-                if (res) return res;
+                if (res != 0) return res;
             }
             break;
 
         case NODE256:
             for (int i=0; i < 256; i++) {
-                if (!((art_node256*)n)->children[i]) continue;
+                if (((art_node256*)n)->children[i] == NULL) continue;
                 res = recursive_iter(((art_node256*)n)->children[i], cb, data);
-                if (res) return res;
+                if (res != 0) return res;
             }
             break;
 
@@ -924,12 +924,12 @@ int art_iter_prefix(art_tree *t, const unsigned char *key, int key_len, art_call
     art_node **child;
     art_node *n = t->root;
     int prefix_len, depth = 0;
-    while (n) {
+    while (n != NULL) {
         // Might be a leaf
         if (IS_LEAF(n)) {
             n = (art_node*)LEAF_RAW(n);
             // Check if the expanded path matches
-            if (!leaf_prefix_matches((art_leaf*)n, key, key_len)) {
+            if (leaf_prefix_matches((art_leaf*)n, key, key_len) == 0) {
                 art_leaf *l = (art_leaf*)n;
                 return cb(data, (const unsigned char*)l->key, l->key_len, l->value);
             }
@@ -939,13 +939,13 @@ int art_iter_prefix(art_tree *t, const unsigned char *key, int key_len, art_call
         // If the depth matches the prefix, we need to handle this node
         if (depth == key_len) {
             art_leaf *l = minimum(n);
-            if (!leaf_prefix_matches(l, key, key_len))
+            if (leaf_prefix_matches(l, key, key_len) == 0)
                return recursive_iter(n, cb, data);
             return 0;
         }
 
         // Bail if the prefix does not match
-        if (n->partial_len) {
+        if (n->partial_len != 0) {
             prefix_len = prefix_mismatch(n, key, key_len, depth);
 
             // Guard if the mis-match is longer than the MAX_PREFIX_LEN
@@ -954,7 +954,7 @@ int art_iter_prefix(art_tree *t, const unsigned char *key, int key_len, art_call
             }
 
             // If there is no match, search is terminated
-            if (!prefix_len) {
+            if (prefix_len == 0) {
                 return 0;
 
             // If we've matched the prefix, iterate on this node
@@ -968,7 +968,7 @@ int art_iter_prefix(art_tree *t, const unsigned char *key, int key_len, art_call
 
         // Recursively search
         child = find_child(n, key[depth]);
-        n = (child) ? *child : NULL;
+        n = (child != NULL) ? *child : NULL;
         depth++;
     }
     return 0;
